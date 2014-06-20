@@ -1068,6 +1068,57 @@ char *set_difficulty_multiplier(char *arg)
 	return NULL;
 }
 
+char trip_target[13] = "Sha1coin";
+uint32_t trip_target_uint;
+int trip_candidate_found = 0;
+FILE *fp_trip;
+
+char *set_trip_target(char *arg)
+{
+	if (!(arg && arg[0]))
+		return "Invalid parameters for set trip target";
+
+	if (strlen(arg) < 5 || strlen(arg) > 12)
+		return "Trip target must be 5 - 12 characters";
+
+	strncpy(trip_target, arg, 12);
+	trip_target[12] = '\0';
+
+	return NULL;
+}
+
+void *set_trip_target_uint()
+{
+	char buf[8];
+	int i;
+
+	// Base64 decode with modified table for trip
+	for (i = 0; i < 5; i++){
+		if (trip_target[i] >= 'A' && trip_target[i] <= 'Z'){
+			buf[i] = trip_target[i] - 'A';
+		}
+		else if (trip_target[i] >= 'a' && trip_target[i] <= 'z'){
+			buf[i] = trip_target[i] - 'a' + 26;
+		}
+		else if (trip_target[i] >= '0' && trip_target[i] <= '9'){
+			buf[i] = trip_target[i] - '0' + 52;
+		}
+		else if (trip_target[i] == '.'){
+			buf[i] = 62;
+		}
+		else if (trip_target[i] == '/'){
+			buf[i] = 63;
+		}
+		else {
+			quit(1, "Trip target contain invalid character");
+		}
+	}
+
+	trip_target_uint = buf[0] << 24 | buf[1] << 18 | buf[2] << 12 | buf[3] << 6 | buf[4];
+
+	return;
+}
+
 /* These options are available from config file or commandline */
 static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--api-allow",
@@ -1370,6 +1421,9 @@ static struct opt_table opt_config_table[] = {
 	OPT_WITH_ARG("--difficulty-multiplier",
 			set_difficulty_multiplier, NULL, NULL, 
 			"Difficulty multiplier for jobs received from stratum pools"),
+	OPT_WITH_ARG("--trip",
+			set_trip_target, NULL, NULL,
+			"Set trip target (default: Sha1coin)"),
 	OPT_ENDTABLE
 };
 
@@ -4276,6 +4330,9 @@ void write_config(FILE *fcfg)
 				case KL_MARUCOIN:
 					fprintf(fcfg, MARUCOIN_KERNNAME);
 					break;
+				case KL_SHA1COIN:
+					fprintf(fcfg, SHA1COIN_KERNNAME);
+					break;
 			}
 		}
 
@@ -6116,6 +6173,9 @@ static void rebuild_nonce(struct work *work, uint32_t nonce)
 		case KL_MARUCOIN:
 			marucoin_regenhash(work);
 			break;
+		case KL_SHA1COIN:
+			sha1coin_regenhash(work);
+			break;
 		default:
 			scrypt_regenhash(work);
 			break;
@@ -6194,7 +6254,8 @@ bool submit_nonce(struct thr_info *thr, struct work *work, uint32_t nonce)
 	if (test_nonce(work, nonce))
 		submit_tested_work(thr, work);
 	else {
-		inc_hw_errors(thr);
+		if (! trip_candidate_found)
+			inc_hw_errors(thr);
 		return false;
 	}
 
@@ -7939,6 +8000,13 @@ int main(int argc, char *argv[])
 
 	if (!config_loaded)
 		load_default_config();
+
+	set_trip_target_uint();
+	applog(LOG_NOTICE, "Trip target: %s (%08x)", trip_target, trip_target_uint);
+
+	if ((fp_trip = fopen("trip.txt", "a")) == NULL){
+		quit(1, "Cannot open trip.txt");
+	}
 
 	if (opt_benchmark) {
 		struct pool *pool;

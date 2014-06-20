@@ -229,6 +229,8 @@ static enum cl_kernels select_kernel(char *arg)
 		return KL_TWECOIN;
 	if (!strcmp(arg, MARUCOIN_KERNNAME))
 		return KL_MARUCOIN;
+	if (!strcmp(arg, SHA1COIN_KERNNAME))
+		return KL_SHA1COIN;
 
 	return KL_NONE;
 }
@@ -1082,6 +1084,26 @@ static cl_int queue_sph_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_unus
 	return status;
 }
 
+static cl_int queue_sha1coin_kernel(_clState *clState, dev_blk_ctx *blk, __maybe_unused cl_uint threads)
+{
+	unsigned char *midstate = blk->work->midstate;
+	cl_kernel *kernel = &clState->kernel;
+	unsigned int num = 0;
+	cl_ulong le_target;
+	cl_int status = 0;
+
+	le_target = *(cl_ulong *)(blk->work->device_target + 24);
+	flip80(clState->cldata, blk->work->data);
+	status = clEnqueueWriteBuffer(clState->commandQueue, clState->CLbuffer0, true, 0, 80, clState->cldata, 0, NULL,NULL);
+
+	CL_SET_ARG(clState->CLbuffer0);
+	CL_SET_ARG(clState->outputBuffer);
+	CL_SET_ARG(le_target);
+	CL_SET_ARG(trip_target_uint);
+
+	return status;
+}
+
 
 static void set_threads_hashes(unsigned int vectors, unsigned int compute_shaders, int64_t *hashes, size_t *globalThreads,
 			       unsigned int minthreads, __maybe_unused int *intensity, __maybe_unused int *xintensity, __maybe_unused int *rawintensity)
@@ -1402,6 +1424,9 @@ static bool opencl_thread_prepare(struct thr_info *thr)
 			case KL_MARUCOIN:
 				cgpu->kname = MARUCOIN_KERNNAME;
 				break;
+			case KL_SHA1COIN:
+				cgpu->kname = SHA1COIN_KERNNAME;
+				break;
 			default:
 				break;
 		}
@@ -1449,6 +1474,9 @@ static bool opencl_thread_init(struct thr_info *thr)
 	case KL_TWECOIN:
 	case KL_MARUCOIN:
 		thrdata->queue_kernel_parameters = &queue_sph_kernel;
+		break;
+	case KL_SHA1COIN:
+		thrdata->queue_kernel_parameters = &queue_sha1coin_kernel;
 		break;
 	default:
 		applog(LOG_ERR, "Failed to choose kernel in opencl_thread_init");

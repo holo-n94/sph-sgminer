@@ -509,6 +509,11 @@ _clState *initCl(unsigned int gpu, char *name, size_t nameSize)
 			strcpy(filename, MARUCOIN_KERNNAME".cl");
 			strcpy(binaryfilename, MARUCOIN_KERNNAME);
 			break;
+		case KL_SHA1COIN:
+			applog(LOG_WARNING, "Kernel sha1coin is experimental.");
+			strcpy(filename, SHA1COIN_KERNNAME".cl");
+			strcpy(binaryfilename, SHA1COIN_KERNNAME);
+			break;
 		case KL_NONE: /* Shouldn't happen */
 			break;
 	}

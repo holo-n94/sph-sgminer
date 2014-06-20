@@ -53,6 +53,7 @@ sgminer_SOURCES += groestlcoin.c groestlcoin.h
 sgminer_SOURCES += sifcoin.c sifcoin.h
 sgminer_SOURCES += twecoin.c twecoin.h
 sgminer_SOURCES += marucoin.c marucoin.h
+sgminer_SOURCES += sha1coin.c sha1coin.h
 sgminer_SOURCES += kernel/*.cl
 
 bin_SCRIPTS	= $(top_srcdir)/kernel/*.cl

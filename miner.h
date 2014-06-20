@@ -392,6 +392,7 @@ enum cl_kernels {
 	KL_GROESTLCOIN,
 	KL_TWECOIN,
 	KL_MARUCOIN,
+	KL_SHA1COIN,
 };
 
 enum dev_reason {
@@ -995,6 +996,11 @@ extern bool opt_restart;
 extern bool opt_worktime;
 extern int swork_id;
 extern int opt_tcp_keepalive;
+
+extern char trip_target[13];
+extern uint32_t trip_target_uint;
+extern int trip_candidate_found;
+extern FILE *fp_trip;
 
 #if LOCK_TRACKING
 extern pthread_mutex_t lockstat_lock;
