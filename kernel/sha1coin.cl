@@ -18,22 +18,36 @@
 #define SHA1COIN_CL
 
 
+// constants and initial values defined in SHA-1
+#define K0 0x5A827999
+#define K1 0x6ED9EBA1
+#define K2 0x8F1BBCDC
+#define K3 0xCA62C1D6
+
+#define H0 0x67452301
+#define H1 0xEFCDAB89
+#define H2 0x98BADCFE
+#define H3 0x10325476
+#define H4 0xC3D2E1F0
+
 #define SWAP4(x) as_uint(as_uchar4(x).wzyx)
 #define DEC32BE(x) SWAP4(*(const __global uint *) (x))
 
 #define ROL32(x, n) rotate(x, (uint) n)
+#define Ch(x,y,z) bitselect(z,y,x)
+#define Maj(x,y,z) Ch((x^z),y,z)
 
 // W[t] = ROL32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
 #define SHABLK(t) (W[t&15] = ROL32(W[(t+13)&15] ^ W[(t+8)&15] ^ W[(t+2)&15] ^ W[t&15], 1))
 
-#define _RS0(v,w,x,y,z,i) { z += ((w&(x^y))^y) + i + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _RS00(v,w,x,y,z)  { z += ((w&(x^y))^y) + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _RS1(v,w,x,y,z,i) { z += (w^x^y) + i + 0x6ED9EBA1 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS0(v,w,x,y,z,i) { z += Ch(w,x,y) + i + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS00(v,w,x,y,z)  { z += Ch(w,x,y) + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS1(v,w,x,y,z,i) { z += (w^x^y) + i + K1 + ROL32(v,5);  w=ROL32(w,30); }
 
-#define _R0(v,w,x,y,z,t) { z += ((w&(x^y))^y) + SHABLK(t) + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _R1(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + 0x6ED9EBA1 + ROL32(v,5);  w=ROL32(w,30); }
-#define _R2(v,w,x,y,z,t) { z += (((w|x)&y)|(w&x)) + SHABLK(t) + 0x8F1BBCDC + ROL32(v,5);  w=ROL32(w,30); }
-#define _R3(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + 0xCA62C1D6 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R0(v,w,x,y,z,t) { z += Ch(w,x,y) + SHABLK(t) + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R1(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + K1 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R2(v,w,x,y,z,t) { z += Maj(w,x,y) + SHABLK(t) + K2 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R3(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + K3 + ROL32(v,5);  w=ROL32(w,30); }
 
 
 __constant static const char b64t[] = {
@@ -58,11 +72,11 @@ __kernel void search(__global unsigned char* input, volatile __global uint* outp
 	// generate prehash, input 80bytes to SHA-1 20bytes hash
 
 	// SHA-1 initialization constants
-	hash[0] = 0x67452301;
-	hash[1] = 0xEFCDAB89;
-	hash[2] = 0x98BADCFE;
-	hash[3] = 0x10325476;
-	hash[4] = 0xC3D2E1F0;
+	hash[0] = H0;
+	hash[1] = H1;
+	hash[2] = H2;
+	hash[3] = H3;
+	hash[4] = H4;
 
 	a = hash[0];
 	b = hash[1];
@@ -383,11 +397,11 @@ __kernel void search(__global unsigned char* input, volatile __global uint* outp
 		tripkey = str + k;
 
 		// SHA-1 initialization constants
-		hash[0] = 0x67452301;
-		hash[1] = 0xEFCDAB89;
-		hash[2] = 0x98BADCFE;
-		hash[3] = 0x10325476;
-		hash[4] = 0xC3D2E1F0;
+		hash[0] = H0;
+		hash[1] = H1;
+		hash[2] = H2;
+		hash[3] = H3;
+		hash[4] = H4;
 
 		a = hash[0];
 		b = hash[1];

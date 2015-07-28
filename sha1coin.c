@@ -20,19 +20,33 @@
 #include <string.h>
 
 
+// constants and initial values defined in SHA-1
+#define K0 0x5A827999
+#define K1 0x6ED9EBA1
+#define K2 0x8F1BBCDC
+#define K3 0xCA62C1D6
+
+#define H0 0x67452301
+#define H1 0xEFCDAB89
+#define H2 0x98BADCFE
+#define H3 0x10325476
+#define H4 0xC3D2E1F0
+
 #define ROL32(_val32, _nBits) (((_val32)<<(_nBits))|((_val32)>>(32-(_nBits))))
+#define Ch(x,y,z) ((x&(y^z))^z)
+#define Maj(x,y,z) (((x|y)&z)|(x&y))
 
 // W[t] = ROL32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
 #define SHABLK(t) (W[t&15] = ROL32(W[(t+13)&15] ^ W[(t+8)&15] ^ W[(t+2)&15] ^ W[t&15], 1))
 
-#define _RS0(v,w,x,y,z,i) { z += ((w&(x^y))^y) + i + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _RS00(v,w,x,y,z)  { z += ((w&(x^y))^y) + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _RS1(v,w,x,y,z,i) { z += (w^x^y) + i + 0x6ED9EBA1 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS0(v,w,x,y,z,i) { z += Ch(w,x,y) + i + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS00(v,w,x,y,z)  { z += Ch(w,x,y) + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _RS1(v,w,x,y,z,i) { z += (w^x^y) + i + K1 + ROL32(v,5);  w=ROL32(w,30); }
 
-#define _R0(v,w,x,y,z,t) { z += ((w&(x^y))^y) + SHABLK(t) + 0x5A827999 + ROL32(v,5);  w=ROL32(w,30); }
-#define _R1(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + 0x6ED9EBA1 + ROL32(v,5);  w=ROL32(w,30); }
-#define _R2(v,w,x,y,z,t) { z += (((w|x)&y)|(w&x)) + SHABLK(t) + 0x8F1BBCDC + ROL32(v,5);  w=ROL32(w,30); }
-#define _R3(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + 0xCA62C1D6 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R0(v,w,x,y,z,t) { z += Ch(w,x,y) + SHABLK(t) + K0 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R1(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + K1 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R2(v,w,x,y,z,t) { z += Maj(w,x,y) + SHABLK(t) + K2 + ROL32(v,5);  w=ROL32(w,30); }
+#define _R3(v,w,x,y,z,t) { z += (w^x^y) + SHABLK(t) + K3 + ROL32(v,5);  w=ROL32(w,30); }
 
 
 void sha1hash12byte(const char *input, uint32_t *m_state)
@@ -42,11 +56,11 @@ void sha1hash12byte(const char *input, uint32_t *m_state)
 	int i;
 
 	// SHA-1 initialization constants
-	m_state[0] = 0x67452301;
-	m_state[1] = 0xEFCDAB89;
-	m_state[2] = 0x98BADCFE;
-	m_state[3] = 0x10325476;
-	m_state[4] = 0xC3D2E1F0;
+	m_state[0] = H0;
+	m_state[1] = H1;
+	m_state[2] = H2;
+	m_state[3] = H3;
+	m_state[4] = H4;
 
 	a = m_state[0];
 	b = m_state[1];
@@ -208,11 +222,11 @@ void sha1hash80byte(const uint8_t *input, uint32_t *m_state)
 	int i;
 
 	// SHA-1 initialization constants
-	m_state[0] = 0x67452301;
-	m_state[1] = 0xEFCDAB89;
-	m_state[2] = 0x98BADCFE;
-	m_state[3] = 0x10325476;
-	m_state[4] = 0xC3D2E1F0;
+	m_state[0] = H0;
+	m_state[1] = H1;
+	m_state[2] = H2;
+	m_state[3] = H3;
+	m_state[4] = H4;
 
 	a = m_state[0];
 	b = m_state[1];
